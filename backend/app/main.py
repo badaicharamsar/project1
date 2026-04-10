@@ -62,11 +62,13 @@ async def serve_frontend() -> FileResponse:
     return FileResponse(index_path)
 
 
+@app.get("/health", include_in_schema=False)
 @app.get("/api/health")
 async def health() -> dict[str, str]:
     return {"status": "ok", "message": "Shortest-path research prototype is running."}
 
 
+@app.get("/demo-data", response_model=LoadDataResponse, include_in_schema=False)
 @app.get("/api/demo-data", response_model=LoadDataResponse)
 async def get_demo_data() -> LoadDataResponse:
     try:
@@ -77,6 +79,7 @@ async def get_demo_data() -> LoadDataResponse:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
+@app.post("/data/load", response_model=LoadDataResponse, include_in_schema=False)
 @app.post("/api/data/load", response_model=LoadDataResponse)
 async def load_data(request: LoadDataRequest) -> LoadDataResponse:
     try:
@@ -87,6 +90,7 @@ async def load_data(request: LoadDataRequest) -> LoadDataResponse:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@app.post("/data/upload-excel", response_model=LoadDataResponse, include_in_schema=False)
 @app.post("/api/data/upload-excel", response_model=LoadDataResponse)
 async def upload_excel_data(
     nodes_file: UploadFile = File(...),
@@ -103,6 +107,7 @@ async def upload_excel_data(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@app.post("/data/upload-workbook", response_model=LoadDataResponse, include_in_schema=False)
 @app.post("/api/data/upload-workbook", response_model=LoadDataResponse)
 async def upload_single_workbook(workbook_file: UploadFile = File(...)) -> LoadDataResponse:
     try:
@@ -113,6 +118,7 @@ async def upload_single_workbook(workbook_file: UploadFile = File(...)) -> LoadD
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@app.post("/graph/build", response_model=GraphSummarySchema, include_in_schema=False)
 @app.post("/api/graph/build", response_model=GraphSummarySchema)
 async def graph_build(request: GraphBuildRequest) -> GraphSummarySchema:
     try:
@@ -128,6 +134,7 @@ async def graph_build(request: GraphBuildRequest) -> GraphSummarySchema:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@app.post("/dijkstra/run", response_model=DijkstraResponse, include_in_schema=False)
 @app.post("/api/dijkstra/run", response_model=DijkstraResponse)
 async def dijkstra_run(request: DijkstraRequest) -> DijkstraResponse:
     try:
@@ -144,6 +151,7 @@ async def dijkstra_run(request: DijkstraRequest) -> DijkstraResponse:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@app.post("/routes/alternatives", response_model=AlternativesResponse, include_in_schema=False)
 @app.post("/api/routes/alternatives", response_model=AlternativesResponse)
 async def route_alternatives(request: AlternativesRequest) -> AlternativesResponse:
     try:
@@ -166,6 +174,7 @@ async def route_alternatives(request: AlternativesRequest) -> AlternativesRespon
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@app.post("/mcdm/evaluate", response_model=McdmResponse, include_in_schema=False)
 @app.post("/api/mcdm/evaluate", response_model=McdmResponse)
 async def mcdm_evaluate(request: McdmRequest) -> McdmResponse:
     try:
@@ -179,6 +188,7 @@ async def mcdm_evaluate(request: McdmRequest) -> McdmResponse:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+@app.post("/hybrid/run", response_model=HybridResponse, include_in_schema=False)
 @app.post("/api/hybrid/run", response_model=HybridResponse)
 async def hybrid_run(request: HybridRequest) -> HybridResponse:
     try:
