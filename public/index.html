@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shortest-Path Research Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">Academic GIS Prototype</p>
+          <h1>Shortest-Path and Hybrid Route Analysis</h1>
+          <p class="subtitle">
+            Workspace penelitian lokal untuk visualisasi simpul-jalur di Kota Medan,
+            shortest path berbasis Dijkstra, dan evaluasi hybrid dengan MCDM.
+          </p>
+        </div>
+
+        <div class="header-side">
+          <nav class="nav-tabs">
+            <button id="nav-home" class="nav-tab active" type="button">Home</button>
+            <button id="nav-shortest" class="nav-tab" type="button">Shortest Path</button>
+            <button id="nav-hybrid" class="nav-tab" type="button">Hybrid</button>
+          </nav>
+          <div class="header-actions">
+            <button id="clear-workspace-btn" class="ghost-button" type="button">Clear Workspace</button>
+          </div>
+        </div>
+      </header>
+
+      <aside class="sidebar hidden" id="sidebar">
+        <section class="panel">
+          <div class="panel-heading">
+            <h2>Import Excel</h2>
+            <span id="dataset-badge" class="badge">Empty</span>
+          </div>
+          <div class="status-box" id="dataset-status">
+            Belum ada data yang diimpor. Workspace siap untuk satu file Excel dengan dua sheet:
+            data jalur dan koordinat simpul.
+          </div>
+          <div class="field-group">
+            <label for="workbook-file">File Excel Penelitian (.xlsx)</label>
+            <input id="workbook-file" type="file" accept=".xlsx,.xlsm" />
+          </div>
+          <button id="upload-excel-btn" class="primary-button" type="button">Import Workbook</button>
+          <p class="muted-note">
+            Workbook didukung jika berisi dua sheet seperti screenshot Anda. Sheet jalur akan
+            dipakai untuk edge dan kriteria, sedangkan sheet koordinat simpul dipakai untuk
+            visualisasi node. Header yang dikenali antara lain
+            <code>Kode Simpul</code>, <code>Nama Persimpangan</code>, <code>Simpul Awal</code>,
+            <code>Simpul Akhir</code>, <code>Jarak (km)</code>, dan <code>Waktu</code>.
+          </p>
+        </section>
+
+        <section class="panel shortest-only">
+          <div class="panel-heading">
+            <h2>Manual Nodes</h2>
+            <span id="node-form-mode" class="mini-label">Add</span>
+          </div>
+          <form id="node-form" class="stack-form">
+            <input type="hidden" id="node-edit-id" />
+            <div class="field-row">
+              <div class="field-group">
+                <label for="node-id">Node ID</label>
+                <input id="node-id" type="text" />
+              </div>
+              <div class="field-group">
+                <label for="node-name">Name</label>
+                <input id="node-name" type="text" />
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field-group">
+                <label for="node-latitude">Latitude</label>
+                <input id="node-latitude" type="number" step="any" />
+              </div>
+              <div class="field-group">
+                <label for="node-longitude">Longitude</label>
+                <input id="node-longitude" type="number" step="any" />
+              </div>
+            </div>
+            <div class="field-group">
+              <label for="node-metadata">Metadata (JSON)</label>
+              <textarea id="node-metadata" rows="3">{}</textarea>
+            </div>
+            <label class="check-row">
+              <input id="node-active" type="checkbox" checked />
+              <span>Active node</span>
+            </label>
+            <div class="button-row">
+              <button type="submit" class="primary-button">Save Node</button>
+              <button id="clear-node-form-btn" type="button" class="ghost-button">Clear</button>
+            </div>
+          </form>
+          <div class="table-wrap compact-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="nodes-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel shortest-only">
+          <div class="panel-heading">
+            <h2>Manual Edges</h2>
+            <span id="edge-form-mode" class="mini-label">Add</span>
+          </div>
+          <form id="edge-form" class="stack-form">
+            <input type="hidden" id="edge-edit-index" />
+            <div class="field-row">
+              <div class="field-group">
+                <label for="edge-source">Source</label>
+                <select id="edge-source"></select>
+              </div>
+              <div class="field-group">
+                <label for="edge-target">Target</label>
+                <select id="edge-target"></select>
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field-group">
+                <label for="edge-distance">Distance</label>
+                <input id="edge-distance" type="number" step="any" min="0" />
+              </div>
+              <div class="field-group">
+                <label for="edge-time">Time</label>
+                <input id="edge-time" type="number" step="any" min="0" />
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field-group">
+                <label for="edge-cost">Cost</label>
+                <input id="edge-cost" type="number" step="any" min="0" value="0" />
+              </div>
+              <div class="field-group">
+                <label for="edge-road-score">Road Condition</label>
+                <input id="edge-road-score" type="number" step="any" min="0" value="3" />
+              </div>
+            </div>
+            <div class="field-group">
+              <label for="edge-metadata">Metadata (JSON)</label>
+              <textarea id="edge-metadata" rows="3">{}</textarea>
+            </div>
+            <div class="button-row">
+              <button type="submit" class="primary-button">Save Edge</button>
+              <button id="clear-edge-form-btn" type="button" class="ghost-button">Clear</button>
+            </div>
+          </form>
+          <div class="table-wrap compact-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Edge</th>
+                  <th>Distance</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="edges-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel shortest-only">
+          <div class="panel-heading">
+            <h2>Shortest Path</h2>
+            <span class="mini-label">Current algorithm: Dijkstra</span>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="origin-select">Origin</label>
+              <select id="origin-select"></select>
+            </div>
+            <div class="field-group">
+              <label for="destination-select">Destination</label>
+              <select id="destination-select"></select>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="graph-type-select">Graph Type</label>
+              <select id="graph-type-select">
+                <option value="undirected">Undirected</option>
+                <option value="directed">Directed</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="metric-select">Metric</label>
+              <select id="metric-select">
+                <option value="distance">Distance</option>
+                <option value="time">Time</option>
+                <option value="cost">Cost</option>
+                <option value="custom">Custom combined weight</option>
+              </select>
+            </div>
+          </div>
+          <div id="custom-metric-panel" class="subpanel hidden">
+            <h3>Custom Weight Coefficients</h3>
+            <div class="field-row">
+              <div class="field-group">
+                <label for="custom-distance-weight">Distance</label>
+                <input id="custom-distance-weight" type="number" min="0" step="any" value="1" />
+              </div>
+              <div class="field-group">
+                <label for="custom-time-weight">Time</label>
+                <input id="custom-time-weight" type="number" min="0" step="any" value="0.5" />
+              </div>
+            </div>
+            <div class="field-row">
+              <div class="field-group">
+                <label for="custom-cost-weight">Cost</label>
+                <input id="custom-cost-weight" type="number" min="0" step="any" value="0.2" />
+              </div>
+              <div class="field-group">
+                <label for="custom-road-weight">Road Condition</label>
+                <input id="custom-road-weight" type="number" min="0" step="any" value="0.3" />
+              </div>
+            </div>
+          </div>
+          <div class="field-group">
+            <label>Active Nodes</label>
+            <div id="active-nodes-list" class="checklist"></div>
+          </div>
+          <div class="button-row">
+            <button id="build-graph-btn" type="button" class="ghost-button">Validate Graph</button>
+            <button id="run-shortest-btn" type="button" class="primary-button">Run Dijkstra</button>
+          </div>
+        </section>
+
+        <section class="panel hybrid-only hidden">
+          <div class="panel-heading">
+            <h2>Hybrid Analysis</h2>
+            <span class="mini-label">Shortest Path + MCDM</span>
+          </div>
+          <div class="status-box" id="hybrid-status">
+            Hybrid analysis akan memakai dataset yang sudah diimpor pada menu Shortest Path.
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="hybrid-scenario-select">Scenario</label>
+              <select id="hybrid-scenario-select">
+                <option value="">Pilih skenario terlebih dahulu</option>
+                <option value="scenario_1">Scenario 1: MCDM first, then Dijkstra</option>
+                <option value="scenario_2">Scenario 2: Local MCDM per edge step</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="hybrid-origin-select">Origin</label>
+              <select id="hybrid-origin-select"></select>
+            </div>
+            <div class="field-group">
+              <label for="hybrid-destination-select">Destination</label>
+              <select id="hybrid-destination-select"></select>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="hybrid-graph-type-select">Graph Type</label>
+              <select id="hybrid-graph-type-select">
+                <option value="undirected">Undirected</option>
+                <option value="directed">Directed</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="hybrid-weight-method-select">Weight Method</label>
+              <select id="hybrid-weight-method-select">
+                <option value="manual">Manual normalized</option>
+                <option value="equal">Equal weight</option>
+                <option value="stddev">Stdv weight</option>
+                <option value="critic">CRITIC weight</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="mcdm-method-select">MCDM Method</label>
+              <select id="mcdm-method-select">
+                <option value="saw">SAW</option>
+                <option value="topsis">TOPSIS</option>
+              </select>
+            </div>
+          </div>
+          <div class="field-group">
+            <label>Active Nodes</label>
+            <div id="hybrid-active-nodes-list" class="checklist"></div>
+          </div>
+          <div class="subpanel">
+            <h3>Criteria from Imported Data</h3>
+            <div class="field-row">
+              <div class="field-group">
+                <label for="hybrid-field-select">Imported Column</label>
+                <select id="hybrid-field-select"></select>
+              </div>
+              <div class="field-group">
+                <label for="hybrid-field-kind-select">Criterion Type</label>
+                <select id="hybrid-field-kind-select">
+                  <option value="cost">Cost</option>
+                  <option value="benefit">Benefit</option>
+                </select>
+              </div>
+            </div>
+            <div class="button-row">
+              <button id="add-imported-criterion-btn" type="button" class="ghost-button">Add Imported Criterion</button>
+              <button id="add-hybrid-criterion-btn" type="button" class="text-button">Input Kriteria Manual</button>
+            </div>
+          </div>
+          <div class="panel-heading inline-heading">
+            <h3>Selected Criteria</h3>
+          </div>
+          <div id="hybrid-criteria-editor" class="criteria-editor"></div>
+          <div class="subpanel" id="weight-summary-panel">
+            <h3>Weight Summary</h3>
+            <div class="field-row">
+              <div class="field-group">
+                <label for="total-raw-weight">Total Raw Weight</label>
+                <input id="total-raw-weight" type="text" readonly value="0" />
+              </div>
+              <div class="field-group">
+                <label for="total-normalized-weight">Sigma Weight</label>
+                <input id="total-normalized-weight" type="text" readonly value="0" />
+              </div>
+            </div>
+            <div class="button-row">
+              <button id="normalize-weights-btn" type="button" class="ghost-button">Hitung dan Sesuaikan Bobot</button>
+            </div>
+          </div>
+          <div class="subpanel hidden" id="manual-values-panel">
+            <h3>Input Kriteria Manual</h3>
+            <p class="muted-note">
+              Isi nilai tiap alternatif edge berdasarkan <code>Kode Sisi</code> atau pasangan simpul.
+            </p>
+            <div id="manual-values-editor"></div>
+          </div>
+          <div class="button-row">
+            <button id="run-hybrid-btn" type="button" class="primary-button">Run Hybrid</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <h2>Export</h2>
+          </div>
+          <div class="button-row">
+            <button id="export-json-btn" type="button" class="ghost-button">JSON</button>
+            <button id="export-csv-btn" type="button" class="ghost-button">CSV</button>
+            <button id="export-geojson-btn" type="button" class="ghost-button">GeoJSON</button>
+          </div>
+        </section>
+      </aside>
+
+      <main class="map-panel panel">
+        <div class="panel-heading">
+          <h2 id="workspace-title">Map Workspace</h2>
+          <span id="map-mode-note" class="mini-label">Default view: Medan</span>
+        </div>
+        <div id="map"></div>
+      </main>
+
+      <section class="results-panel panel">
+        <div class="panel-heading">
+          <h2 id="results-title">Home</h2>
+          <span id="results-badge" class="badge">Ready</span>
+        </div>
+        <div id="flash-message" class="flash-message info">
+          Workspace awal kosong. Silakan pilih menu dan impor data Excel saat Anda siap.
+        </div>
+        <div id="results-content" class="results-content">
+          <div class="result-card" id="home-card">
+            <h3>Selamat Datang</h3>
+            <p class="muted-note">
+              Peta dibuka di Kota Medan sebagai tampilan awal. Belum ada perhitungan otomatis.
+            </p>
+            <div class="metrics-grid">
+              <div class="metric-pill">
+                <span>Home</span>
+                <strong>Mulai dari orientasi workspace dan petunjuk penggunaan.</strong>
+              </div>
+              <div class="metric-pill">
+                <span>Shortest Path</span>
+                <strong>Gunakan Dijkstra untuk menghitung jalur terpendek pada graph.</strong>
+              </div>
+              <div class="metric-pill">
+                <span>Hybrid</span>
+                <strong>Gabungkan shortest path dengan MCDM berdasarkan kriteria impor.</strong>
+              </div>
+              <div class="metric-pill">
+                <span>Import Excel</span>
+                <strong>Gunakan satu workbook Excel berisi sheet jalur dan sheet koordinat simpul.</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

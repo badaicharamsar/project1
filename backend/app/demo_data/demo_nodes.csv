@@ -1,0 +1,8 @@
+id,name,latitude,longitude,active,category
+A,Gerbang Kampus,-6.973,107.63,true,origin
+B,Perpustakaan,-6.972,107.633,true,facility
+C,Laboratorium,-6.97,107.636,true,facility
+D,Simpang Utama,-6.975,107.6365,true,junction
+E,Klinik,-6.977,107.6335,true,facility
+F,Asrama,-6.979,107.637,true,destination
+G,Halte,-6.981,107.631,true,transport

@@ -1,0 +1,13 @@
+source,target,distance,time,cost,road_condition_score,road_name
+A,B,0.35,3,0,4.0,Koridor 1
+B,C,0.45,4,0,4.5,Koridor 2
+C,D,0.55,5,0,3.8,Koridor 3
+A,E,0.60,5,1,4.2,Koridor Selatan
+E,D,0.40,4,0.5,4.0,Akses Klinik
+E,G,0.45,4,0.5,3.5,Jalur Halte
+G,F,0.70,6,1.5,4.5,Koridor Barat
+D,F,0.50,5,0.5,3.2,Jalur Asrama
+B,E,0.55,5,0.5,2.8,Jalur Tengah
+C,F,0.80,7,1.0,4.8,Akses Langsung
+D,G,0.65,6,0.5,3.0,Simpang Barat
+A,G,0.75,6,2.0,4.9,Jalur Utama Barat
