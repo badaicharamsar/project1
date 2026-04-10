@@ -1,0 +1,74 @@
+{
+  "nodes": [
+    {
+      "id": "A",
+      "name": "Gerbang Kampus",
+      "latitude": -6.973,
+      "longitude": 107.63,
+      "metadata": {
+        "category": "origin"
+      },
+      "active": true
+    },
+    {
+      "id": "B",
+      "name": "Perpustakaan",
+      "latitude": -6.972,
+      "longitude": 107.633,
+      "metadata": {
+        "category": "facility"
+      },
+      "active": true
+    },
+    {
+      "id": "C",
+      "name": "Laboratorium",
+      "latitude": -6.97,
+      "longitude": 107.636,
+      "metadata": {
+        "category": "facility"
+      },
+      "active": true
+    },
+    {
+      "id": "D",
+      "name": "Simpang Utama",
+      "latitude": -6.975,
+      "longitude": 107.6365,
+      "metadata": {
+        "category": "junction"
+      },
+      "active": true
+    },
+    {
+      "id": "E",
+      "name": "Klinik",
+      "latitude": -6.977,
+      "longitude": 107.6335,
+      "metadata": {
+        "category": "facility"
+      },
+      "active": true
+    },
+    {
+      "id": "F",
+      "name": "Asrama",
+      "latitude": -6.979,
+      "longitude": 107.637,
+      "metadata": {
+        "category": "destination"
+      },
+      "active": true
+    },
+    {
+      "id": "G",
+      "name": "Halte",
+      "latitude": -6.981,
+      "longitude": 107.631,
+      "metadata": {
+        "category": "transport"
+      },
+      "active": true
+    }
+  ]
+}
